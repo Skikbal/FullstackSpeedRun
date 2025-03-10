@@ -3,10 +3,12 @@ import crypto from "crypto";
 import sendMail from "../utils/nodemailer.js";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import bcrypt from "bcryptjs";
 import { error } from "console";
 //registration function
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
+  console.log(password, email);
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -62,7 +64,7 @@ const verifyUser = async (req, res) => {
   }
 };
 
-const loginUser = async () => {
+const loginUser = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ message: "Invalid email or password" });
@@ -82,7 +84,7 @@ const loginUser = async () => {
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-    cookieOptions = {
+    const cookieOptions = {
       httpOnly: true,
       secure: true,
       maxAge: 24 * 60 * 600 * 1000,
@@ -98,7 +100,8 @@ const loginUser = async () => {
       },
     });
   } catch (err) {
-    return res.status(400).json({ message: "login failed" });
+    console.log(err);
+    return res.status(400).json({ message: "login failed", error: err });
   }
 };
 
