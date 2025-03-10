@@ -3,7 +3,7 @@ import "dotenv/config";
 import cors from "cors";
 import conncetDb from "./utils/db.js";
 import userRoutes from "./routes/user.routes.js";
-
+import cookieParser from "cookie-parser";
 const app = express();
 
 const PORT = process.env.PORT || 8000;
@@ -20,6 +20,7 @@ app.use(
 );
 app.use(express.json()); //Deserialization of json data
 app.use(express.urlencoded({ extended: true })); //Deserialization of form data
+app.use(cookieParser());
 
 //routes
 app.use("/api/v1/user", userRoutes);
