@@ -15,8 +15,8 @@ This project sets up a **Node.js backend** with **MongoDB (Mongoose)**, followin
 
 - **Backend:** Node.js, Express.js
 - **Database:** MongoDB, Mongoose
-- **Other Tools:** dotenv (for environment variables)
-<!-- - **Authentication:** JWT, Bcrypt  -->
+- **Other Tools:** dotenv (for environment variables),zod(validation for formdata),nodemailer(mail service)
+- **Authentication:** JWT, Bcrypt
 
 ## 📂 Folder Structure
 
@@ -25,8 +25,10 @@ This project sets up a **Node.js backend** with **MongoDB (Mongoose)**, followin
 ┣ 📂 backend
 ┃   ┣ 📂 model (User Schema)
 ┃   ┣ 📂 controller (Business Logic)
+┃   ┣ 📂 middleware
 ┃   ┣ 📂 routes (Routes)
 ┃   ┣ 📂 utils (utilities)
+┃   ┣ 📂 validations
 ┃   ┣ 📜 index.js
 ┣   📜 .env
 ┣   📜 package.json
@@ -34,28 +36,34 @@ This project sets up a **Node.js backend** with **MongoDB (Mongoose)**, followin
 ```
 
 ## ▶️ How to Run
+
 ### 1️⃣ Install dependencie
+
 ```js
 npm install
 ```
+
 ### 2️⃣ Create a `.env` file
+
 ```env
-MONGO_URI=your-mongodb-connection-string  
-JWT_SECRET=your-secret-key  
+MONGO_URI=your-mongodb-connection-string
+JWT_SECRET=your-secret-key
 ```
+
 ### 3️⃣ Start the server
+
 ```js
 npm run dev
 ```
 
 ## 🚀 API Endpoints
+
 ```md
-## 🚀 API Endpoints  
+## 🚀 API Endpoints
 
-| Method |            Endpoint          |          Description             |
-|--------|------------------------------|----------------------------------|
-| POST   | /api/v1/user/register        | Register new user                |
-
-
+| Method | Endpoint                  | Description         |
+| ------ | ------------------------- | ------------------- |
+| POST   | /api/v1/user/register     | Register new user   |
+| GET   | /api/v1/user/verify/token | verify the new user |
+| POST   | /api/v1/user/login        | user login          |
 ```
-
