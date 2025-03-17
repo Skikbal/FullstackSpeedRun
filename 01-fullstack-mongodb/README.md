@@ -7,15 +7,21 @@ This project sets up a **Node.js backend** with **MongoDB (Mongoose)**, followin
 ✅ Node.js + Express setup  
 ✅ MongoDB connection using Mongoose  
 ✅ MVC Architecture (Models, Routes, Controllers)  
-✅ Environment variables handling (.env)
-
-<!-- ✅ User Authentication (Signup, Login, JWT)   -->
+✅ Environment variables handling (.env)  
+✅ User Authentication (Signup, Login, JWT)  
+✅ Email Verification  
+✅ Forgot Password & Reset Password  
+✅ Logout Functionality  
+✅ Setting & Removing Cookies  
+✅ Password Hashing  
+✅ JWT Authentication & Authorization  
+✅ Sending Emails using Nodemailer & Mailtrap
 
 ## 🛠 Tech Stack
 
 - **Backend:** Node.js, Express.js
 - **Database:** MongoDB, Mongoose
-- **Other Tools:** dotenv (for environment variables),zod(validation for formdata),nodemailer(mail service)
+- **Other Tools:** dotenv (for environment variables), zod (validation for form data), nodemailer (mail service)
 - **Authentication:** JWT, Bcrypt
 
 ## 📂 Folder Structure
@@ -37,33 +43,44 @@ This project sets up a **Node.js backend** with **MongoDB (Mongoose)**, followin
 
 ## ▶️ How to Run
 
-### 1️⃣ Install dependencie
+### 1️⃣ Install dependencies
 
-```js
+```sh
 npm install
 ```
 
 ### 2️⃣ Create a `.env` file
 
 ```env
+PORT=your-port
 MONGO_URI=your-mongodb-connection-string
+BASE_URL=your-base-url
+
+# Nodemailer (Mailtrap Credentials)
+MAILTRAP_HOST=your-mailtrap-host
+MAILTRAP_PORT=your-mailtrap-port
+MAILTRAP_USERNAME=your-mailtrap-username
+MAILTRAP_PASSWORD=your-mailtrap-password
+
 JWT_SECRET=your-secret-key
 ```
 
 ### 3️⃣ Start the server
 
-```js
+```sh
 npm run dev
 ```
 
 ## 🚀 API Endpoints
 
-```md
-## 🚀 API Endpoints
+| Method | Endpoint                     | Description         |
+| ------ | ---------------------------- | ------------------- |
+| POST   | /api/v1/user/register        | Register new user   |
+| GET    | /api/v1/user/verify/token    | Verify the new user |
+| POST   | /api/v1/user/login           | User login          |
+| POST   | /api/v1/user/forget-password | Forgot password     |
+| POST   | /api/v1/user/reset-password  | Reset password      |
+| GET    | /api/v1/user/user-profile    | Get user profile    |
+| POST   | /api/v1/user/logout          | Logout user         |
 
-| Method | Endpoint                  | Description         |
-| ------ | ------------------------- | ------------------- |
-| POST   | /api/v1/user/register     | Register new user   |
-| GET   | /api/v1/user/verify/token | verify the new user |
-| POST   | /api/v1/user/login        | user login          |
-```
+Now, the project is **complete** with full authentication and authorization features. 🚀

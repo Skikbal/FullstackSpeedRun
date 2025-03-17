@@ -2,107 +2,323 @@ import User from "../model/User.model.js";
 import crypto from "crypto";
 import sendMail from "../utils/nodemailer.js";
 import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import { error } from "console";
-//registration function
+
+//function for creating token
+function createRandomToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+//function for formating response
+const responseHandler = (
+  res,
+  statusCode = 500,
+  message = "Something went wrong",
+  success = false,
+  data = null,
+  error = null
+) => {
+  const responseObject = { success, message };
+  if (data) responseObject.data = data;
+  if (error) responseObject.error = error;
+
+  return res.status(statusCode).json(responseObject);
+};
+
+// User Registration
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
-  console.log(password, email);
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "All fields are required" });
+    return responseHandler(res, 400, "All fields are required.");
   }
-  //check if user is already exist
+
   try {
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already registered" });
+      return responseHandler(
+        res,
+        400,
+        "User already registered. Please log in."
+      );
     }
 
-    //create user
+    // Create new user
     const user = await User.create({ name, email, password });
-
     if (!user) {
-      return res.status(400).json({ message: "User not registered" });
+      return responseHandler(
+        res,
+        500,
+        "User registration failed. Please try again."
+      );
     }
-    const token = crypto.randomBytes(32).toString("hex");
-    const link = `${process.env.BASE_URL}/user/verify/${token}`;
+
+    // Generate verification token
+    const token = createRandomToken();
+    const verificationLink = `${process.env.BASE_URL}/user/verify/${token}`;
     user.verificationToken = token;
     await user.save();
+
+    // Send verification email
     await sendMail(
       email,
-      "Verify your email",
-      `Please click on the following link: ${link}`,
-      `<h1>Hello ${name},</h1><p>Welcome onboard!</p><a href=${link}>click here</a>`
+      "Verify Your Email",
+      `Click the link to verify your email: ${verificationLink}`,
+      `<h1>Hello ${name},</h1><p>Welcome! Click <a href="${verificationLink}">here</a> to verify your account.</p>`
     );
-    res.status(201).json({ message: "user created successfully" });
+
+    responseHandler(
+      res,
+      201,
+      "User registered successfully. Please verify your email.",
+      true
+    );
   } catch (err) {
-    console.log(err);
-    return res.status(400).json({ message: "User not registered", error: err });
+    return responseHandler(
+      res,
+      500,
+      "Internal server error. Please try again later.",
+      false,
+      null,
+      err.message
+    );
   }
 };
-//verify user
+
+// User Email Verification
 const verifyUser = async (req, res) => {
   const { token } = req.params;
 
   if (!token) {
-    return res.status(400).json({ message: "invalid token" });
+    return responseHandler(res, 400, "Invalid or missing verification token.");
   }
+
   try {
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      return res.status(400).json({ message: "invalid token" });
+      return responseHandler(
+        res,
+        400,
+        "Invalid or expired verification token."
+      );
     }
+
     user.isVerified = true;
     user.verificationToken = undefined;
     await user.save();
-    return res.status(200).json({ message: "user verification successfull" });
+
+    responseHandler(
+      res,
+      200,
+      "Email verification successful. You can now log in.",
+      true
+    );
   } catch (err) {
-    return res.status(400).json({ message: "invalid token" });
+    console.error(err);
+    return responseHandler(
+      res,
+      500,
+      "Internal server error.",
+      false,
+      null,
+      err.message
+    );
   }
 };
 
+// User Login
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
   if (!email || !password) {
-    return res.status(400).json({ message: "Invalid email or password" });
+    return responseHandler(res, 400, "Email and password are required.");
   }
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return responseHandler(
+        res,
+        404,
+        "User not found. Please register first."
+      );
     }
+
+    if (!user.isVerified) {
+      return responseHandler(
+        res,
+        403,
+        "Please verify your email before logging in."
+      );
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return responseHandler(res, 401, "Incorrect email or password.");
     }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
-    const cookieOptions = {
+
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true,
-      maxAge: 24 * 60 * 600 * 1000,
-    };
-    res.cookie("token", token, cookieOptions);
-    res.status(200).json({
-      success: true,
-      message: "Login Successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        role: user.role,
-      },
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    responseHandler(res, 200, "Login successful.", true, {
+      name: user.name,
+      email: user.email,
     });
   } catch (err) {
-    console.log(err);
-    return res.status(400).json({ message: "login failed", error: err });
+    console.error(err);
+    return responseHandler(
+      res,
+      500,
+      "Internal server error.",
+      false,
+      null,
+      err.message
+    );
   }
 };
 
-export { registerUser, verifyUser, loginUser };
+// Get User Profile
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return responseHandler(res, 404, "User not found.");
+    }
+
+    responseHandler(res, 200, "User profile fetched successfully.", true, user);
+  } catch (err) {
+    console.error(err);
+    return responseHandler(
+      res,
+      500,
+      "Internal server error.",
+      false,
+      null,
+      err.message
+    );
+  }
+};
+
+// Forgot Password
+const forgetUserPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return responseHandler(res, 400, "Email is required.");
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return responseHandler(res, 404, "No user found with this email.");
+    }
+
+    if (!user.isVerified) {
+      return responseHandler(
+        res,
+        403,
+        "Please verify your email before resetting the password."
+      );
+    }
+
+    const token = createRandomToken();
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+
+    const resetUrl = `${process.env.BASE_URL}/user/reset-password/${token}`;
+    await sendMail(
+      email,
+      "Reset Password",
+      `Click the link to reset your password: ${resetUrl}`,
+      `<p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 10 minutes.</p>`
+    );
+
+    responseHandler(res, 200, "Password reset link sent to your email.", true);
+  } catch (err) {
+    console.error(err);
+    return responseHandler(
+      res,
+      500,
+      "Internal server error.",
+      false,
+      null,
+      err.message
+    );
+  }
+};
+
+// Reset Password
+const resetUserPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password, confpassword } = req.body;
+
+  if (!password || !confpassword || password !== confpassword) {
+    return responseHandler(res, 400, "Passwords do not match.");
+  }
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return responseHandler(
+        res,
+        400,
+        "Invalid or expired password reset token."
+      );
+    }
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    responseHandler(
+      res,
+      200,
+      "Password reset successfully. You can now log in.",
+      true
+    );
+  } catch (err) {
+    console.error(err);
+    return responseHandler(
+      res,
+      500,
+      "Internal server error.",
+      false,
+      null,
+      err.message
+    );
+  }
+};
+
+// Logout
+const logout = async (req, res) => {
+  res.cookie("token", "", { expires: new Date(0) });
+  responseHandler(res, 200, "Logged out successfully.", true);
+};
+
+export {
+  registerUser,
+  verifyUser,
+  loginUser,
+  getUserProfile,
+  forgetUserPassword,
+  resetUserPassword,
+  logout,
+};
