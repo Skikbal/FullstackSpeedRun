@@ -83,4 +83,10 @@ npm run dev
 | GET    | /api/v1/user/user-profile    | Get user profile    |
 | POST   | /api/v1/user/logout          | Logout user         |
 
-Now, the project is **complete** with full authentication and authorization features. 🚀
+📩 Postman Collection
+
+You can test the API using Postman. Import the Postman collection from the link below:
+
+[POSTMAN_COLLECTION_LINK](https://fullstack-webdev-7836.postman.co/workspace/fullstack-webdev-Workspace~29c174ca-03a8-4598-9a51-2304df8d7e7f/collection/42848063-01946ca1-1d3f-42f6-9501-097be2bb4727?action=share&creator=42848063)
+
+### Now, the project is **complete** with full authentication and authorization features. 🚀
